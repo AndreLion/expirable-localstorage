@@ -1,4 +1,7 @@
-expirable-localstorage
+Expirable Localstorage
 ======================
 
-Making localStorage expirable without changing your coding habit.
+[Homepage](http://andrelion.github.io/expirable-localstorage)
+
+Documentation:
+
