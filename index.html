@@ -1,0 +1,143 @@
+<!DOCTYPE html>
+<head>
+	<meta charset="utf-8">
+	<title>Expirable Localstorage</title>
+	<link rel="stylesheet" href="../html5-localstorage-manager/extension/lib/bootstrap.min.css">
+	<style>
+		body { margin:20px 0; }
+		.prefix { width:70px;display:inline-block; }
+		.github-logo { background:transparent url(../html5-localstorage-manager/images/github.png) right 7px no-repeat scroll;background-size:16px;padding-right:22px; }
+		.jumbotron { background-image:url(../html5-localstorage-manager/images/forkme.png);background-position:right top;background-repeat:no-repeat;position:relative; }
+		.jumbotron .github-fork { position:absolute;right:0;top:0;height:135px;width:135px; }
+		.higher { padding:10px 0 20px 0; }
+		#init { display:inline;width:100px;margin:0 5px; }
+		pre { position:relative; }
+		#run { display:block;position:absolute;right:10px;bottom:10px; }
+		#define { display:none; }
+		#reuslt { width:100%; }
+		.something { display:none; }
+		.has-data .something { display:table-row; }
+		.has-data .nothing{ display:none; }
+		#expires { }
+		#expires .invalid { display:none;  }
+		#expires .invalid .red { color:red; }
+		#expires .valid { display:block;  }
+		#expires.expired .invalid { display:block;  }
+		#expires.expired .valid { display:none;  }
+		thead tr th:nth-child(1) { width:15%; }
+		thead tr th:nth-child(2) { width:15%; }
+		thead tr th:nth-child(3) { width:70%; }
+	</style>
+</head>
+<body>
+	<div class="container">
+		<div class="jumbotron">
+			<div class="container">
+				<h1>Expirable Localstorage</h1>
+				<p class="higher">Once upon a time, <a href="http://diveintohtml5.info/storage.html">localstorage</a> never get expired. But this time, everything has changed except your coding habit. All you need to do is include the expirable-localstorage.js into your web page, and localstorage becomes expirable.</p>
+				<p><span class="prefix">Before</span>: <code>localStorage.setItem('weather_today','Sunny');</code></p>
+				<p><span class="prefix">Now</span>: <code>localStorage.setItem('weather_today','Sunny',{expires:'1d'});</code></p>
+				<p class="higher">As the code above indicated, the 3rd argument is extended into native setItem method. You can pass-in the expiration configration and everything will be done in the background.</p>
+				<p>
+					<a class="btn btn-primary btn-lg" href="expirable-localstorage.js">Download</a>
+					<a class="btn btn-link github-logo" href="https://github.com/AndreLion/expirable-localstorage">Contribute on GitHub</a>
+				</p>
+			</div>
+			<a href="https://github.com/AndreLion/html5-localstorage-manager" class="github-fork"></a>
+		</div>
+		<h2>Demonstration</h2>
+		<div id="code">
+<pre>
+&lt;script&gt;
+	<span id="define">
+	var date = new Date(<input type="text" class="form-control input-sm" val="" placeholder="init parameter" id="init" />)</span>
+	localStorage.setItem('weather','Sunny',<select id="arg"><option value="3s">'3s'</option><option value="10s">'10s'</option><option value="30min">'30min'</option><option value="1h">'1h'</option><option value="1d">'1d'</option><option value="1mon">'1mon'</option><option value="date">date</option></select>);
+
+&lt;/script&gt;
+			<button type="button" class="btn btn-primary btn-sm" id="run">Run</button>
+</pre>
+		</div>
+		<table class="table table-bordered" id="result">
+			<thead>
+				<tr>
+					<th>Key</th>
+					<th>Value</th>
+					<th>Expires at</th>
+				</tr>
+			</thead>
+			<tbody>
+				<tr class="something">
+					<td id="key"></td>
+					<td id="value"></td>
+					<td id="expires"><span class="text"></span><span class="invalid"><span class="red">Expired!</span> <a href="javascript:location.reload();" class="btn btn-primary btn-sm">Reload</a> page and this localStorage item will be erased.</span></td>
+				</tr>
+				<tr class="nothing" align="center">
+					<td colspan="3">Key 'weather' in localStorage is empty.</td>
+				</tr>
+			</tbody>
+		</table>
+	</div>
+	<script src="../html5-localstorage-manager/extension/lib/jquery-1.10.2.min.js"></script>
+	<script src="expirable-localstorage.js"></script>
+	<script>
+		$(function(){
+			var thread;
+			var EXP_DATA = '_EXPIRES_DATA_';
+			var delimiter1st = 'ˆ';
+			var delimiter2nd = '☈';
+			var parse = function(){
+				var result = {};
+				var str = localStorage.getItem(EXP_DATA);
+				var arr = str.split(delimiter1st);
+				var kv = [];
+				for(var i=0,l=arr.length;i<l;i++){
+					if(arr[i] !== ''){
+						kv = arr[i].split(delimiter2nd);
+						result[kv[0]] = kv[1];
+					}
+				}
+				return result;
+			};
+			var render = function(){
+				var weather = localStorage.getItem('weather');
+				if(weather){
+					var expires = parse();
+					$('#key').text('weather');
+					$('#value').text(weather);
+					$('#expires .text').text(expires.weather + ' ('+(new Date(+expires.weather))+')');
+					$('#result').addClass('has-data');
+					if(+expires.weather > +new Date){
+						$('#expires').removeClass('expired');
+					}else{
+						$('#expires').addClass('expired');
+						thread || clearInterval(thread);
+					}
+				}else{
+					$('#result').removeClass('has-data');
+					thread || clearInterval(thread);
+				}
+			};
+			$('#arg').on('change',function(ev){
+				if($(this).val() === 'date'){
+					$('#define').show();
+					$('#init').val(+new Date).select();
+				}else{
+					$('#define').hide();
+				}
+			});
+			$('#run').on('click',function(ev){
+				var expires = $('#arg').val();;
+				if(expires === 'date'){
+					expires = new Date(+$('#init').val());
+				}
+				localStorage.setItem('weather','Sunny',{expires:expires});
+				render();
+				thread = setInterval(function(){
+					render();
+				},1000);
+			});
+			render();
+		});
+	</script>
+</body>
+</html>
